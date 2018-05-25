@@ -174,10 +174,24 @@ jobs:
           name: Trigger Docker build
           command: './scripts/trigger_docker_build.sh ${TRIGGER_GRAFANA_PACKER_CIRCLECI_TOKEN} ${CIRCLE_TAG}'
 
+  mysql-integration-test:
+    docker:
+      - image: circleci/golang:1.10
+    working_directory: /go/src/github.com/grafana/grafana
+    steps:
+        - checkout
+        - setup_remote_docker
+        - run:
+            name: mysql integration tests
+            command: './scripts/mysql-integration-tests.sh'
+
+
 workflows:
   version: 2
   test-and-build:
     jobs:
+      - mysql-integration-test:
+          filters: *filter-not-release
       - build-all:
           filters: *filter-not-release
       - codespell:
@@ -190,6 +204,7 @@ workflows:
           filters: *filter-not-release
       - deploy-master:
           requires:
+            - mysql-integration-test
             - build-all
             - test-backend
             - test-frontend
